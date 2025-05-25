@@ -1,23 +1,26 @@
 import 'package:blockchain_based_national_election_user_app/core/exception/exception.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/login_model.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/sign_up_model.dart';
+import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/profileModel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<Map<dynamic, dynamic>> signUp(SignUpModel signUpModel);
-  Future<Map<dynamic, dynamic>> login(LoginModel loginModel);
+  Future<void> signUp(String email, String password);
+  Future<void> login(String email, String password);
+  Future<void> userDatail(ProfileModel signUpModel);
+  Future<void> updateUserDetail(String userId, Map<String, dynamic> userDetail);
+  Future<Map<String, dynamic>?> fetchUserProfile(String userId);
+  Future<void> logout();
 }
 
 class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
   final supabase = Supabase.instance.client;
 
   @override
-  Future<Map<dynamic, dynamic>> login(LoginModel loginModel) async {
-    print('Trying login with: ${loginModel.email}/${loginModel.password}');
+  Future<void> login(String email, String password) async {
+    print('Trying login with: $email/$password');
 
     try {
-      final response = await supabase.auth.signInWithPassword(
-          email: loginModel.email, password: loginModel.password.toString());
+      final response = await supabase.auth
+          .signInWithPassword(email: email, password: password);
       if (response.user == null) {
         throw ServerException();
       }
@@ -26,9 +29,6 @@ class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
       if (user == null) {
         throw UserNotFoundException();
       }
-      final profile =
-          await supabase.from('profiles').select().eq('id', user.id).single();
-      return profile;
     } on AuthException catch (e) {
       print('auth exception: code=${e.code}, message=${e.message}');
       final message = e.message.toLowerCase();
@@ -52,12 +52,12 @@ class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
   }
 
   @override
-  Future<Map<dynamic, dynamic>> signUp(SignUpModel signUpModel) async {
-    print('Trying login with: ${signUpModel.email}/${signUpModel.password}');
+  Future<void> signUp(String email, String password) async {
+    print('Trying signup with: $email/$password');
 
     try {
-      final response = await supabase.auth.signUp(
-          email: signUpModel.email, password: signUpModel.password.toString());
+      final response =
+          await supabase.auth.signUp(email: email, password: password);
       if (response.user == null) {
         throw ServerException();
       }
@@ -67,18 +67,7 @@ class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
         throw Exception('User ID is null. Signup might have failed.');
       }
 
-      await supabase.from('profile').insert({
-        'id': userId,
-        'first_name': signUpModel.firstName,
-        'middle_name': signUpModel.middleName,
-        'last_name': signUpModel.lastName,
-        'fayda_no': signUpModel.faydaNo,
-      });
-
       print('User and profile created.');
-      final profile =
-          await supabase.from('profiles').select().eq('id', userId).single();
-      return profile;
     } on AuthException catch (e) {
       print('Auth exception: code=${e.code}, message=${e.message}');
       final message = e.message.toLowerCase();
@@ -96,7 +85,94 @@ class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
         throw ServerException();
       }
     } catch (e) {
-      print('❌ Other error: $e');
+      print('Other error: $e');
+      throw ServerException();
+    }
+  }
+
+  @override
+  Future<void> userDatail(ProfileModel signUpModel) async {
+    try {
+      await supabase.from('profiles').insert({
+        'id': signUpModel.userId,
+        'first_name': signUpModel.firstName,
+        'last_name': signUpModel.lastName,
+        'fayda_no': signUpModel.faydaNo,
+        'state_Id': signUpModel.stateId,
+      });
+      print('profile created.');
+    } on AuthException catch (e) {
+      print('Auth exception: code=${e.code}, message=${e.message}');
+      final message = e.message.toLowerCase();
+      if (message.contains('too many requests')) {
+        throw TooManyRequestsException();
+      } else {
+        throw TransactionFailedException(message: e.message);
+      }
+    } catch (e) {
+      print('Other error: $e');
+      throw TransactionFailedException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<void> updateUserDetail(
+      String userId, Map<String, dynamic> userDetail) async {
+    try {
+      print(
+          '----------------------------------------updating---------------------------------------------');
+      print(userId);
+      print(userDetail);
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .update(userDetail)
+          .eq('id', userId);
+
+      if (response.error != null) {
+        print(response.error!.message);
+        TransactionFailedException(message: response.error!.message);
+      } else {
+        print(' updated successfully');
+      }
+    } catch (e) {
+      print('Other error: $e');
+      throw TransactionFailedException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchUserProfile(String userId) async {
+  
+    try {
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      return response;
+    } on AuthException catch (e) {
+      print('Auth exception: code=${e.code}, message=${e.message}');
+      final message = e.message.toLowerCase();
+
+      if (message.contains('too many requests')) {
+        throw TooManyRequestsException();
+      } else {
+        throw ServerException();
+      }
+    } catch (e) {
+      print('Other error: $e');
+      throw ServerException();
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+      print('Logout successful');
+    } catch (e) {
+      print('Logout failed: $e');
       throw ServerException();
     }
   }

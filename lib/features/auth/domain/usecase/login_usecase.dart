@@ -6,7 +6,7 @@ class LoginUsecase {
 
   LoginUsecase({required this.authRepository});
 
-  UserData call(String email, int password) {
-    return authRepository.logIn(email,password);
+  UserUnit call(String email, String password) {
+    return authRepository.logIn(email, password);
   }
 }

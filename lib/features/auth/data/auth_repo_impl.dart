@@ -2,8 +2,7 @@ import 'package:blockchain_based_national_election_user_app/core/exception/excep
 import 'package:blockchain_based_national_election_user_app/core/failure/failure.dart';
 import 'package:blockchain_based_national_election_user_app/core/network/network.dart';
 import 'package:blockchain_based_national_election_user_app/core/resource/type.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/login_model.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/sign_up_model.dart';
+import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/profileModel.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/data/data_source/auth_remote_data_source.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/domain/repository/auth_repo.dart';
 import 'package:dartz/dartz.dart';
@@ -15,20 +14,11 @@ class AuthRepoImpl extends AuthRepository {
   AuthRepoImpl({required this.networkInfo, required this.authRemoteDataSource});
 
   @override
-  UserData signUp(String firstName, String middleName, String lastName,
-      int faydaNo, String email, int password) async {
+  UserUnit userDetail(ProfileModel signUpModel) async {
     if (await networkInfo.isConnected) {
       try {
-        SignUpModel signUpModel = SignUpModel(
-          firstName: firstName,
-          middleName: middleName,
-          lastName: lastName,
-          faydaNo: faydaNo,
-          email: email,
-          password: password,
-        );
-        final profileDetail = await authRemoteDataSource.signUp(signUpModel);
-        return Right(profileDetail);
+        await authRemoteDataSource.userDatail(signUpModel);
+        return const Right(unit);
       } on ServerException {
         return Left(ServerFailure());
       } on UserNotFoundException {
@@ -50,15 +40,11 @@ class AuthRepoImpl extends AuthRepository {
   }
 
   @override
-  UserData logIn(String email, int passowrd) async {
+  UserUnit logIn(String email, String passowrd) async {
     if (await networkInfo.isConnected) {
       try {
-        LoginModel loginModel = LoginModel(
-          email: email,
-          password: passowrd,
-        );
-        final profileDetail = await authRemoteDataSource.login(loginModel);
-        return Right(profileDetail);
+        await authRemoteDataSource.login(email, passowrd);
+        return const Right(unit);
       } on ServerException {
         return Left(ServerFailure());
       } on UserNotFoundException {
@@ -78,6 +64,111 @@ class AuthRepoImpl extends AuthRepository {
       }
     } else {
       return Left(OfflineFailure());
+    }
+  }
+
+  @override
+  UserUnit signUp(String email, String password) async {
+    if (await networkInfo.isConnected) {
+      try {
+        await authRemoteDataSource.signUp(email, password);
+        return const Right(unit);
+      } on ServerException {
+        return Left(ServerFailure());
+      } on UserNotFoundException {
+        return Left(UserNotFoundFailure());
+      } on WrongPasswordException {
+        return Left(WrongPasswordFailure());
+      } on InvalidEmailException {
+        return Left(InvalidEmailFailure());
+      } on UserDisableException {
+        return Left(UserDisabledFailure());
+      } on EmailAlreadyInUseException {
+        return Left(EmailAlreadyInUseFailure());
+      } on OperationNotAllowedException {
+        return Left(OperationNotAllowedFailure());
+      } on TooManyRequestsException {
+        return Left(TooManyRequestsFailure());
+      }
+    } else {
+      return Left(OfflineFailure());
+    }
+  }
+
+  @override
+  UserUnit logout() async {
+    try {
+      await authRemoteDataSource.logout();
+      return const Right(unit);
+    } on ServerException {
+      return Left(ServerFailure());
+    }
+  }
+
+  @override
+  UserData fatchUserProfile(String userId, {attempt = 1}) async {
+    int maxAttempts = 10;
+    if (await networkInfo.isConnected) {
+      try {
+        final userProfile = await authRemoteDataSource.fetchUserProfile(userId);
+        return Right(userProfile);
+      } on ServerException {
+        return Left(ServerFailure());
+      } on UserNotFoundException {
+        return Left(UserNotFoundFailure());
+      } on WrongPasswordException {
+        return Left(WrongPasswordFailure());
+      } on InvalidEmailException {
+        return Left(InvalidEmailFailure());
+      } on UserDisableException {
+        return Left(UserDisabledFailure());
+      } on EmailAlreadyInUseException {
+        return Left(EmailAlreadyInUseFailure());
+      } on OperationNotAllowedException {
+        return Left(OperationNotAllowedFailure());
+      } on TooManyRequestsException {
+        return Left(TooManyRequestsFailure());
+      }
+    } else {
+      if (attempt < maxAttempts) {
+        await Future.delayed(const Duration(seconds: 3));
+        return await fatchUserProfile(userId, attempt: attempt + 1);
+      } else {
+        return Left(OfflineFailure());
+      }
+    }
+  }
+  
+  @override
+  UserUnit updateUserDetail(String userId, Map<String, dynamic> userDetail,{attempt = 1}) async {
+        int maxAttempts = 10;
+
+     if (await networkInfo.isConnected) {
+      try {
+        await authRemoteDataSource.updateUserDetail(userId, userDetail);
+        return const Right(unit);
+      } on ServerException {
+        return Left(ServerFailure());
+      } on UserNotFoundException {
+        return Left(UserNotFoundFailure());
+      } on InvalidEmailException {
+        return Left(InvalidEmailFailure());
+      } on UserDisableException {
+        return Left(UserDisabledFailure());
+      } on EmailAlreadyInUseException {
+        return Left(EmailAlreadyInUseFailure());
+      } on OperationNotAllowedException {
+        return Left(OperationNotAllowedFailure());
+      } on TooManyRequestsException {
+        return Left(TooManyRequestsFailure());
+      }
+    }else {
+      if (attempt < maxAttempts) {
+        await Future.delayed(const Duration(seconds: 3));
+        return await updateUserDetail(userId,userDetail, attempt: attempt + 1);
+      } else {
+        return Left(OfflineFailure());
+      }
     }
   }
 }
