@@ -61,6 +61,12 @@ class AuthRepoImpl extends AuthRepository {
         return Left(OperationNotAllowedFailure());
       } on TooManyRequestsException {
         return Left(TooManyRequestsFailure());
+      } catch (e) {
+        if (e is TransactionFailedException) {
+          return Left(TransactionFailedFailure(message: e.message));
+        } else {
+         return Left(ServerFailure());
+        }
       }
     } else {
       return Left(OfflineFailure());
@@ -133,39 +139,6 @@ class AuthRepoImpl extends AuthRepository {
       if (attempt < maxAttempts) {
         await Future.delayed(const Duration(seconds: 3));
         return await fatchUserProfile(userId, attempt: attempt + 1);
-      } else {
-        return Left(OfflineFailure());
-      }
-    }
-  }
-  
-  @override
-  UserUnit updateUserDetail(String userId, Map<String, dynamic> userDetail,{attempt = 1}) async {
-        int maxAttempts = 10;
-
-     if (await networkInfo.isConnected) {
-      try {
-        await authRemoteDataSource.updateUserDetail(userId, userDetail);
-        return const Right(unit);
-      } on ServerException {
-        return Left(ServerFailure());
-      } on UserNotFoundException {
-        return Left(UserNotFoundFailure());
-      } on InvalidEmailException {
-        return Left(InvalidEmailFailure());
-      } on UserDisableException {
-        return Left(UserDisabledFailure());
-      } on EmailAlreadyInUseException {
-        return Left(EmailAlreadyInUseFailure());
-      } on OperationNotAllowedException {
-        return Left(OperationNotAllowedFailure());
-      } on TooManyRequestsException {
-        return Left(TooManyRequestsFailure());
-      }
-    }else {
-      if (attempt < maxAttempts) {
-        await Future.delayed(const Duration(seconds: 3));
-        return await updateUserDetail(userId,userDetail, attempt: attempt + 1);
       } else {
         return Left(OfflineFailure());
       }

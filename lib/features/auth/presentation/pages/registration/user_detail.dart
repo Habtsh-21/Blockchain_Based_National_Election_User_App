@@ -7,16 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class FirstPage extends ConsumerStatefulWidget {
-  const FirstPage({
+class UserDetail extends ConsumerStatefulWidget {
+  const UserDetail({
     super.key,
   });
 
   @override
-  ConsumerState<FirstPage> createState() => _FirstPageState();
+  ConsumerState<UserDetail> createState() => _FirstPageState();
 }
 
-class _FirstPageState extends ConsumerState<FirstPage> {
+class _FirstPageState extends ConsumerState<UserDetail> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -211,9 +211,9 @@ class _FirstPageState extends ConsumerState<FirstPage> {
                               },
                             ),
                             SizedBox(height: height * 0.02),
-                            if (authState is UserDetailUpleadedState)
+                            if (authState is UserDetailUploadedState)
                               const Text('Verified successfully'),
-                            if (authState is AuthFailureState)
+                            if (authState is UserDetailUploadFailureState)
                               Text(authState.message)
                           ],
                         ),

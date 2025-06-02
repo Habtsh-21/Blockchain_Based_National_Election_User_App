@@ -1,5 +1,5 @@
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/auth_provider/auth_provider.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/presentation/pages/registration/firstPage.dart';
+import 'package:blockchain_based_national_election_user_app/features/auth/presentation/pages/registration/user_detail.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/widget/transition.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/data/model/party_model.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/data/model/state_model.dart';
@@ -27,6 +27,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final email = user?.email;
     final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
     bool hasUserVoted = ref.read(contractProvider.notifier).hasUserVoted();
+
+    int totalUser = ref.read(authStateProvider.notifier).getTotalVoter();
 
     //  init();
     return Scaffold(
@@ -111,11 +113,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                       child: Text(
-                        ref.read(contractProvider.notifier).hasUserVoted()
+                        hasUserVoted
                             ? 'You have voted'
                             : 'You have not voted',
                         style: TextStyle(
-                          color: userDetail['is_voted']
+                          color: hasUserVoted
                               ? Colors.green.shade800
                               : Colors.red.shade800,
                           fontWeight: FontWeight.bold,
@@ -130,7 +132,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         Navigator.push(
                           context,
                           SlideTransition1(
-                            page: const FirstPage(),
+                            page: const UserDetail(),
                           ),
                         );
                       },
@@ -165,9 +167,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               crossAxisSpacing: 20,
               padding: const EdgeInsets.all(8),
               children: [
-                const Box1(
+                Box1(
                     iconData: Icons.people_sharp,
-                    amount: 12000000,
+                    amount: totalUser,
                     text: 'VOTER'),
                 Box1(
                     iconData: Icons.group_work_outlined,

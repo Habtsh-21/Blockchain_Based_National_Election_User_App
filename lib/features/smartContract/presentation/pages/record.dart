@@ -5,14 +5,14 @@ import 'package:blockchain_based_national_election_user_app/features/smartContra
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class Registry extends ConsumerStatefulWidget {
-  const Registry({super.key});
+class Record extends ConsumerStatefulWidget {
+  const Record({super.key});
 
   @override
-  ConsumerState<Registry> createState() => _RegistryState();
+  ConsumerState<Record> createState() => _RegistryState();
 }
 
-class _RegistryState extends ConsumerState<Registry> {
+class _RegistryState extends ConsumerState<Record> {
   @override
   Widget build(BuildContext context) {
     final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
@@ -21,7 +21,7 @@ class _RegistryState extends ConsumerState<Registry> {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text("Election"),
+          title: const Text("Record"),
           actions: [
             IconButton(
                 onPressed: () {

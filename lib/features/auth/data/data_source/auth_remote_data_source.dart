@@ -1,4 +1,5 @@
 import 'package:blockchain_based_national_election_user_app/core/exception/exception.dart';
+import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/data.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/data/auth_model/profileModel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,58 +7,74 @@ abstract class AuthRemoteDataSource {
   Future<void> signUp(String email, String password);
   Future<void> login(String email, String password);
   Future<void> userDatail(ProfileModel signUpModel);
-  Future<void> updateUserDetail(String userId, Map<String, dynamic> userDetail);
-  Future<Map<String, dynamic>?> fetchUserProfile(String userId);
+  Future<Data> fetchUserProfile(String userId);
   Future<void> logout();
 }
 
 class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
   final supabase = Supabase.instance.client;
 
-  @override
-  Future<void> login(String email, String password) async {
-    print('Trying login with: $email/$password');
+ @override
+Future<void> login(String email, String password) async {
+  print('Trying login with: $email/$password');
 
-    try {
-      final response = await supabase.auth
-          .signInWithPassword(email: email, password: password);
-      if (response.user == null) {
-        throw ServerException();
-      }
-      User? user = response.user;
+  try {
+    final response = await supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
 
-      if (user == null) {
-        throw UserNotFoundException();
-      }
-    } on AuthException catch (e) {
-      print('auth exception: code=${e.code}, message=${e.message}');
-      final message = e.message.toLowerCase();
-      if (message.contains('invalid login credentials')) {
-        throw WrongPasswordException();
-      } else if (message.contains('invalid email')) {
-        throw InvalidEmailException();
-      } else if (message.contains('user not found')) {
-        throw UserNotFoundException();
-      } else if (message.contains('signups not allowed')) {
-        throw OperationNotAllowedException();
-      } else if (message.contains('too many requests')) {
-        throw TooManyRequestsException();
-      } else {
-        throw ServerException();
-      }
-    } catch (e) {
-      print('Other error: $e');
-      throw ServerException();
+    final user = response.user;
+
+    if (user == null) {
+      throw TransactionFailedException(message: 'Login failed, try again');
     }
+
+    // ✅ Check email verification explicitly
+    if (user.emailConfirmedAt == null) {
+      throw TransactionFailedException(
+        message: 'Email not verified. Please check your inbox.',
+      );
+    }
+
+  } on AuthException catch (e) {
+    final message = e.message.toLowerCase();
+    if (message.contains('invalid login credentials') ||
+        message.contains('user not found')) {
+      throw TransactionFailedException(
+        message: 'Incorrect email or password',
+      );
+    } else if (message.contains('invalid email')) {
+      throw TransactionFailedException(message: 'Invalid email format');
+    } else if (message.contains('signups not allowed')) {
+      throw TransactionFailedException(message: 'Signups are not allowed');
+    } else if (message.contains('too many requests')) {
+      throw TransactionFailedException(
+        message: 'Too many attempts. Try again later.',
+      );
+    } else {
+      // Catch-all for unexpected AuthExceptions
+      throw TransactionFailedException(message: 'Login error: ${e.message}');
+    }
+  } on TransactionFailedException {
+    rethrow; // Allow custom exceptions to bubble up
+  } catch (e) {
+    print('Unexpected error: $e');
+    throw TransactionFailedException(
+      message: 'Unexpected error: ${e.toString()}',
+    );
   }
+}
 
   @override
   Future<void> signUp(String email, String password) async {
     print('Trying signup with: $email/$password');
 
     try {
-      final response =
-          await supabase.auth.signUp(email: email, password: password);
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
       if (response.user == null) {
         throw ServerException();
       }
@@ -116,41 +133,20 @@ class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
   }
 
   @override
-  Future<void> updateUserDetail(
-      String userId, Map<String, dynamic> userDetail) async {
+  Future<Data> fetchUserProfile(String userId) async {
     try {
-      print(
-          '----------------------------------------updating---------------------------------------------');
-      print(userId);
-      print(userDetail);
-      final response = await Supabase.instance.client
-          .from('profiles')
-          .update(userDetail)
-          .eq('id', userId);
-
-      if (response.error != null) {
-        print(response.error!.message);
-        TransactionFailedException(message: response.error!.message);
-      } else {
-        print(' updated successfully');
-      }
-    } catch (e) {
-      print('Other error: $e');
-      throw TransactionFailedException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<Map<String, dynamic>?> fetchUserProfile(String userId) async {
-  
-    try {
-      final response = await Supabase.instance.client
+      final response1 = await Supabase.instance.client
           .from('profiles')
           .select()
           .eq('id', userId)
           .maybeSingle();
 
-      return response;
+      final response2 = await Supabase.instance.client
+          .from('profiles')
+          .count(CountOption.exact);
+      print('total COUNT: $response2');
+      int totalUser = response2;
+      return Data(userProfile: response1, vefiedUserCount: totalUser);
     } on AuthException catch (e) {
       print('Auth exception: code=${e.code}, message=${e.message}');
       final message = e.message.toLowerCase();

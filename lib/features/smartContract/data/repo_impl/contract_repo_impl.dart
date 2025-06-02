@@ -71,7 +71,7 @@ class ContractRepoImpl extends ContractRepository {
   }
 
   @override
-  ContractAllDta getAllData(int faydaNo, {int attempt = 1}) async {
+  ContractAllDta getAllData(int faydaNo, {int attempt = 1, int atm = 1}) async {
     const maxAttempts = 10;
 
     if (await networkInfo.isConnected) {
@@ -80,15 +80,27 @@ class ContractRepoImpl extends ContractRepository {
         return Right(data);
       } catch (e) {
         if (e is TransactionFailedException) {
-          return Left(TransactionFailedFailure(message: e.message));
+          if (atm < 3) {
+            await Future.delayed(const Duration(seconds: 3));
+            return await getAllData(faydaNo,
+                attempt: attempt + 1, atm: atm + 1);
+          } else {
+            return Left(TransactionFailedFailure(message: e.message));
+          }
         } else {
-          return Left(UnkownFailure());
+          if (atm < 3) {
+            await Future.delayed(const Duration(seconds: 3));
+            return await getAllData(faydaNo,
+                attempt: attempt + 1, atm: atm + 1);
+          } else {
+            return Left(UnkownFailure());
+          }
         }
       }
     } else {
       if (attempt < maxAttempts) {
         await Future.delayed(const Duration(seconds: 3));
-        return await getAllData(faydaNo, attempt: attempt + 1);
+        return await getAllData(faydaNo, attempt: attempt + 1, atm: atm + 1);
       } else {
         return Left(OfflineFailure());
       }

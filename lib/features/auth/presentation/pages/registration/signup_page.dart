@@ -68,7 +68,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             ),
                             SizedBox(height: height * 0.005),
                             const Text(
-                              'Complete Your Profile',
+                              'Create Account',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -189,7 +189,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                               },
                               child: const Text("login"),
                             ),
-                            if (authState is AuthFailureState)
+                            if (authState is SignupFailureState)
                               Text(authState.message),
                           ],
                         ),

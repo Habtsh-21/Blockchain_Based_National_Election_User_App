@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:blockchain_based_national_election_user_app/core/widgets/gradient_button.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/auth_provider/auth_provider.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/presentation/provider/provider.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/presentation/provider/provider_state.dart';
@@ -27,10 +28,6 @@ class _ControlState extends ConsumerState<Vote> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      startTime = ref.watch(contractProvider.notifier).startTime();
-      endTime = ref.watch(contractProvider.notifier).endTime();
     });
   }
 
@@ -67,8 +64,13 @@ class _ControlState extends ConsumerState<Vote> {
         now.isBefore(endTime!);
     final height = MediaQuery.of(context).size.height;
 
+    startTime = ref.watch(contractProvider.notifier).startTime();
+    endTime = ref.watch(contractProvider.notifier).endTime();
     final hasNotStarted = startTime != null && now.isBefore(startTime!);
     final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
+    int faydaNo = userDetail != null
+        ? userDetail['fayda_no']
+        : 0000; //if user detail is null send a random value it return false vote value (user hasn't vote)
     bool isVotingPaused = ref.read(contractProvider.notifier).isVotingPaused();
     bool hasUserVoted = ref.read(contractProvider.notifier).hasUserVoted();
     final contractState = ref.watch(contractProvider);
@@ -78,9 +80,7 @@ class _ControlState extends ConsumerState<Vote> {
 
     if (partyList == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref
-            .read(contractProvider.notifier)
-            .fatchAllData(userDetail != null ? userDetail['fayda_no'] : 0000);
+        ref.read(contractProvider.notifier).fatchAllData(faydaNo);
       });
       return const Scaffold(
         body: Center(
@@ -96,7 +96,21 @@ class _ControlState extends ConsumerState<Vote> {
           type: QuickAlertType.success,
           title: 'Success!',
           textColor: Colors.black,
-          text: 'trxHash:${contractState.txHash}',
+          text: 'trxHash:${contractState.message}',
+          borderRadius: 0,
+          barrierColor: Colors.black.withOpacity(0.2),
+        );
+        ref.read(contractProvider.notifier).resetState();
+      });
+    }
+    if (_previousState != contractState && contractState is VoteFailureState) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'error!',
+          textColor: Colors.black,
+          text: '${contractState.message}',
           borderRadius: 0,
           barrierColor: Colors.black.withOpacity(0.2),
         );
@@ -110,10 +124,8 @@ class _ControlState extends ConsumerState<Vote> {
         backgroundColor: Colors.white,
         actions: [
           IconButton(
-            onPressed: () => ref.read(contractProvider.notifier).fatchAllData(
-                userDetail != null
-                    ? userDetail['fayda_no']
-                    : 0000), //if user detail is null send a random value it return false vote value (user hasn't vote)
+            onPressed: () =>
+                ref.read(contractProvider.notifier).fatchAllData(faydaNo),
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh data',
           )
@@ -204,16 +216,16 @@ class _ControlState extends ConsumerState<Vote> {
                                 SizedBox(
                                   width: double.infinity,
                                   height: height * 0.055,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.all(0),
-                                      shape: const RoundedRectangleBorder(),
-                                      elevation: 2,
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
+                                  child: GradientButton(
+                                    text: Text(
+                                      'Vote',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    onPressed: shouldDisable
-                                        ? null
+                                    onPress: shouldDisable
+                                        ? () {}
                                         : () {
                                             if (votedParty == null) return;
                                             int? votedPartyId =
@@ -230,48 +242,10 @@ class _ControlState extends ConsumerState<Vote> {
                                                   );
                                             }
                                           },
-                                    child: Ink(
-                                      decoration: BoxDecoration(
-                                        gradient: shouldDisable
-                                            ? const LinearGradient(
-                                                colors: [
-                                                  Color.fromARGB(
-                                                      255, 180, 180, 180),
-                                                  Color.fromARGB(
-                                                      255, 200, 200, 200),
-                                                ],
-                                              )
-                                            : const LinearGradient(
-                                                colors: [
-                                                  Color.fromARGB(
-                                                      255, 97, 7, 149),
-                                                  Color.fromARGB(
-                                                      255, 152, 1, 114),
-                                                ],
-                                                begin: Alignment.centerLeft,
-                                                end: Alignment.centerRight,
-                                              ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        child: contractState is VotingState
-                                            ? const Center(
-                                                child:
-                                                    CircularProgressIndicator())
-                                            : const Text(
-                                                'Vote',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                      ),
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                if (contractState is ContractFailureState)
+                                if (contractState is VoteFailureState)
                                   Text(
                                     contractState.message,
                                     style: const TextStyle(color: Colors.red),
@@ -320,7 +294,7 @@ class _ControlState extends ConsumerState<Vote> {
                             isVoting
                                 ? "Voting in Progress"
                                 : startTime == null || endTime == null
-                                    ? "Please set both start and end times"
+                                    ? "Please set start and end times"
                                     : hasNotStarted
                                         ? "Voting will start soon"
                                         : "Voting has ended",

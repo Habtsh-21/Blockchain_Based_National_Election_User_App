@@ -1,3 +1,4 @@
+
 import 'package:blockchain_based_national_election_user_app/features/smartContract/data/model/party_model.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/data/model/state_model.dart';
 import 'package:equatable/equatable.dart';
@@ -7,40 +8,82 @@ abstract class ContractProviderState extends Equatable {
   List<Object?> get props => [];
 }
 
-class ContractInitialState extends ContractProviderState {}
+// === Base Success & Failure States ===
 
-class VotingState extends ContractProviderState {}
+abstract class SuccessState<T> extends ContractProviderState {
+  final T message;
+  SuccessState({required this.message});
 
-class VotedState extends ContractProviderState {
-  final String txHash;
-  VotedState({ required this.txHash});
+  @override
+  List<Object?> get props => [message];
 }
 
-class ContractAllDataFatchingState extends ContractProviderState {}
+abstract class FailureState<T> extends ContractProviderState {
+  final T message;
+  FailureState({required this.message});
 
-class ContractAllDataFatchedState extends ContractProviderState {}
+  @override
+  List<Object?> get props => [message];
+}
+
+// === Initial State ===
+
+class ContractInitialState extends ContractProviderState {}
+
+// === All Data States ===
+
+class ContractAllDataFetchingState extends ContractProviderState {}
+
+class ContractAllDataFetchedState extends SuccessState<String> {
+  ContractAllDataFetchedState({required super.message});
+}
+
+class ContractAllDataFailureState extends FailureState<String> {
+  ContractAllDataFailureState({required super.message});
+}
+
+
 
 class PartyFetchingState extends ContractProviderState {}
 
-class PartyFetchedState extends ContractProviderState {
-  final List<PartyModel> partiesList;
-  PartyFetchedState({required this.partiesList});
+class PartyFetchedState extends SuccessState<List<PartyModel>> {
+  PartyFetchedState({required super.message});
+}
+
+class PartyFetchFailureState extends FailureState<String> {
+  PartyFetchFailureState({required super.message});
 }
 
 class StateFetchingState extends ContractProviderState {}
 
-class StateFetchedState extends ContractProviderState {
-  final List<StateModel> stateList;
-  StateFetchedState({required this.stateList});
+class StateFetchedState extends SuccessState<List<StateModel>> {
+  StateFetchedState({required super.message});
 }
 
-class FileUpoadingState extends ContractProviderState {}
-
-class FileUpoadedState extends ContractProviderState {}
-
-class ContractSuccessState extends ContractProviderState {}
-
-class ContractFailureState extends ContractProviderState {
-  final String message;
-  ContractFailureState({required this.message});
+class StateFetchFailureState extends FailureState<String> {
+  StateFetchFailureState({required super.message});
 }
+
+class VotingState extends ContractProviderState{}
+
+class VotedState extends  SuccessState<String>{
+  VotedState({required super.message});
+}
+
+class VoteFailureState extends FailureState<String>{
+  VoteFailureState({required super.message});
+  
+}
+
+
+
+
+// === Generic Fallback States
+
+// class ContractSuccessState extends SuccessState<String> {
+//   ContractSuccessState({required super.message});
+// }
+
+// class ContractFailureState extends FailureState<String> {
+//   ContractFailureState({required super.message});
+// }

@@ -63,26 +63,18 @@ final getAllDataProver = Provider<GetAllDataUsecase>(
     return GetAllDataUsecase(contractRepository: contractRepo);
   },
 );
-final getUploadedUrl = Provider<UploadimageUsecase>(
-  (ref) {
-    final contractRepo = ref.watch(contractRepoProvider);
-    return UploadimageUsecase(contractRepository: contractRepo);
-  },
-);
 
 class ContractNotifier extends StateNotifier<ContractProviderState> {
   final GetPartyUsecase getPartyUsecase;
   final GetStateUsecase getStateUsecase;
   final VoteUsecase voteUsecase;
   final GetAllDataUsecase getAllDataUsecase;
-  final UploadimageUsecase uploadimageUsecase;
 
   ContractNotifier({
     required this.voteUsecase,
     required this.getPartyUsecase,
     required this.getStateUsecase,
     required this.getAllDataUsecase,
-    required this.uploadimageUsecase,
   }) : super(ContractInitialState());
 
   List<PartyModel>? partyList;
@@ -96,20 +88,19 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
   int _startTime = 0;
   int _endTime = 0;
 
-  String? fileUrl;
-  int counter = 0;
+  // int counter = 0;
 
   Future<List<PartyModel>?> vote(
       int faydaNo, int votedPartyId, int stateId) async {
     state = VotingState();
     final result = await voteUsecase(faydaNo, votedPartyId, stateId);
     state = result.fold((l) {
-      return ContractFailureState(message: _mapFailureToMessage(l));
+      return VoteFailureState(message: _mapFailureToMessage(l));
     }, (r) {
-      return VotedState(txHash: r);
+      return VotedState(message: r);
     });
 
-    Future.delayed(const Duration(seconds: 2), () => resetState());
+    Future.delayed(const Duration(seconds: 3), () => resetState());
     return partyList;
   }
 
@@ -117,13 +108,13 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
     state = PartyFetchingState();
     final result = await getPartyUsecase();
     state = result.fold((l) {
-      return ContractFailureState(message: _mapFailureToMessage(l));
+      return PartyFetchFailureState(message: _mapFailureToMessage(l));
     }, (r) {
       partyList = r;
-      return PartyFetchedState(partiesList: r);
+      return PartyFetchedState(message: r);
     });
 
-    Future.delayed(const Duration(seconds: 2), () => resetState());
+    Future.delayed(const Duration(seconds: 3), () => resetState());
     return partyList;
   }
 
@@ -132,20 +123,21 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
 
     final result = await getStateUsecase();
     state = result.fold(
-        (l) => ContractFailureState(message: _mapFailureToMessage(l)), (r) {
+        (l) => StateFetchFailureState(message: _mapFailureToMessage(l)), (r) {
       stateList = r;
-      return StateFetchedState(stateList: r);
+      return StateFetchedState(message: r);
     });
-    Future.delayed(const Duration(seconds: 2), () => resetState());
+    Future.delayed(const Duration(seconds: 3), () => resetState());
     return stateList;
   }
 
   Future<AllDataModel?> fatchAllData(int faydaNo) async {
     AllDataModel? allDataModel;
-    state = ContractAllDataFatchingState();
+    state = ContractAllDataFetchingState();
     final result = await getAllDataUsecase(faydaNo);
     state = result.fold(
-        (l) => ContractFailureState(message: _mapFailureToMessage(l)), (r) {
+        (l) => ContractAllDataFailureState(message: _mapFailureToMessage(l)),
+        (r) {
       allDataModel = r;
       partyList = r.parties;
       stateList = r.states;
@@ -157,23 +149,9 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
       _hasUserVoted = r.hasUserVoted;
       _startTime = r.votingStateTime;
       _endTime = r.votingEndTime;
-      return ContractAllDataFatchedState();
+      return ContractAllDataFetchedState(message: '');
     });
     return allDataModel;
-  }
-
-  Future<String?> uploadImage(File pickedFile, String fileName) async {
-    state = FileUpoadingState();
-    final result = await uploadimageUsecase(pickedFile, fileName);
-    state = result.fold(
-      (l) => ContractFailureState(message: _mapFailureToMessage(l)),
-      (r) {
-        fileUrl = r;
-        return FileUpoadedState();
-      },
-    );
-    Future.delayed(const Duration(seconds: 2), () => resetState());
-    return fileUrl;
   }
 
   List<PartyModel>? getParties() {
@@ -203,10 +181,10 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
   bool isVotingPaused() {
     return _isVotingPaused;
   }
-   bool hasUserVoted() {
+
+  bool hasUserVoted() {
     return _hasUserVoted;
   }
-
 
   DateTime? startTime() {
     if (_startTime == 0) return null;
@@ -235,7 +213,6 @@ final contractProvider =
     final getPartyUsecase = ref.watch(getPartyProvider);
     final getStateUsecase = ref.watch(getStateProvider);
     final getAllDataUsecase = ref.watch(getAllDataProver);
-    final getFileUrl = ref.watch(getUploadedUrl);
     final voteUsecase = ref.watch(voteProvider);
 
     return ContractNotifier(
@@ -243,17 +220,16 @@ final contractProvider =
       getPartyUsecase: getPartyUsecase,
       getStateUsecase: getStateUsecase,
       getAllDataUsecase: getAllDataUsecase,
-      uploadimageUsecase: getFileUrl,
     );
   },
 );
 
-ContractProviderState stateChecker(
-    Either either, ContractProviderState pState) {
-  return either.fold(
-      (failure) => ContractFailureState(message: _mapFailureToMessage(failure)),
-      (r) => pState);
-}
+// ContractProviderState stateChecker(
+//     Either either, ContractProviderState pState) {
+//   return either.fold(
+//       (failure) => ContractFailureState(message: _mapFailureToMessage(failure)),
+//       (r) => pState);
+// }
 
 String _mapFailureToMessage(Failure failure) {
   switch (failure.runtimeType) {

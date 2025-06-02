@@ -17,10 +17,9 @@ const String _rpcUrl =
 const String _wsUrl =
     'ws://eth-sepolia.g.alchemy.com/v2/-ojPUotrULaRUfZmH3MRZTFQ7OH1wB22';
 const String contractAddress =
-    "0x248BE004170491254Fa7E3D4bd87979EF5f80855"; //updated contract address
-//  "0x47aAa3f944C584CFc52FC2b4057Ac54206B5eE2D";
+    "0xf41e2dD55e52074E08d86541b564B01f2D008641"; 
 const String PRIVATE_KEY =
-    "9d9a132e6a883f1effe0520f10ccf060c6829c2d9df2f30c7261dd704466fab4";
+    "4398d3ac1be44cbc929ee7bf64d203d9f4f2e3f6763911ee8d58fdbddca02883";
 
 abstract class RemoteContractDataSource {
   Future<String> vote(int faydaNo, int votedPartyId, int stateId);
@@ -91,7 +90,6 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
           ),
           chainId: 11155111);
       print(3);
-      await supabase.from('profiles').insert({'is_voted': true});
       print('transaction hash --- $transactionHash');
       return transactionHash;
     } catch (e) {

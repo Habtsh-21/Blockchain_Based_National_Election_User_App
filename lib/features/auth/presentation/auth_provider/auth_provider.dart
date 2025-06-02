@@ -8,10 +8,8 @@ import 'package:blockchain_based_national_election_user_app/features/auth/domain
 import 'package:blockchain_based_national_election_user_app/features/auth/domain/usecase/login_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/domain/usecase/logout_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/domain/usecase/signup_usecase.dart';
-import 'package:blockchain_based_national_election_user_app/features/auth/domain/usecase/update_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/domain/usecase/user_detail_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/auth_provider/provider_state.dart';
-import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
@@ -54,12 +52,7 @@ final userDetailProvider = Provider<UserDetailUsecase>(
     return UserDetailUsecase(authRepository: authRepository);
   },
 );
-final userUpdateProvider = Provider<UpdateUsecase>(
-  (ref) {
-    final authRepository = ref.watch(authRepoProvider);
-    return UpdateUsecase(authRepository: authRepository);
-  },
-);
+
 final fatchUserProfileProvider = Provider<FatchUserProfileUsercase>(
   (ref) {
     final authRepository = ref.watch(authRepoProvider);
@@ -74,41 +67,46 @@ final logOutUsercaseProvider = Provider<LogoutUsecase>(
   },
 );
 
-AuthProviderState stateChecker(Either either, AuthProviderState pState) {
-  return either.fold(
-      (failure) => AuthFailureState(message: _mapFailureToMessage(failure)),
-      (r) => pState);
-}
-
 class AuthNotifier extends StateNotifier<AuthProviderState> {
   final LoginUsecase logInUsecase;
   final SignupUsecase signUpUsecase;
   final UserDetailUsecase userDetailUsecase;
-  final UpdateUsecase updateUsecase;
   final FatchUserProfileUsercase fatchUserProfileUsercase;
   final LogoutUsecase logOutUsecase;
   AuthNotifier(
       {required this.logInUsecase,
       required this.signUpUsecase,
       required this.userDetailUsecase,
-      required this.updateUsecase,
       required this.fatchUserProfileUsercase,
       required this.logOutUsecase})
       : super(InitialState());
   Map<String, dynamic>? userProfile;
+  int totalUser = 0;
 
   Future<void> login(String email, String password) async {
-    state = LogingInState();
+    state = LoggingInState();
 
     final result = await logInUsecase(email, password);
-    state = stateChecker(result, LoggedInState());
+    state = result.fold((l) {
+      return LoginFailureState(message: _mapFailureToMessage(l));
+    }, (r) {
+      return LoggedInState();
+    });
+
+    Future.delayed(const Duration(seconds: 3), () => resetState());
   }
 
   Future<void> signUp(String email, String password) async {
     state = SigningUpState();
 
     final result = await signUpUsecase(email, password);
-    state = stateChecker(result, SignedUpState());
+    state = result.fold((l) {
+      return SignupFailureState(message: _mapFailureToMessage(l));
+    }, (r) {
+      return SignedUpState();
+    });
+
+    Future.delayed(const Duration(seconds: 3), () => resetState());
   }
 
   Future<void> userDetail(String userId, String firstName, String lastName,
@@ -117,29 +115,33 @@ class AuthNotifier extends StateNotifier<AuthProviderState> {
 
     final result =
         await userDetailUsecase(userId, firstName, lastName, faydaNo, stateId);
-    state = stateChecker(result, UserDetailUpleadedState());
-  }
-    Future<void> updateUser(String userId,Map<String,dynamic> userData) async {
-    state = UserUpdatingState();
+    state = result.fold((l) {
+      return UserDetailUploadFailureState(message: _mapFailureToMessage(l));
+    }, (r) {
+      return UserDetailUploadedState();
+    });
 
-    final result =
-        await updateUsecase(userId, userData);
-    state = stateChecker(result, UserUpdatedState());
+    Future.delayed(const Duration(seconds: 3), () => resetState());
   }
-  
-  
+
   Future<void> fatchUserProfile(String userId) async {
-    state = UserProfileFatchingState();
+    state = UserProfileFetchingState();
 
     final result = await fatchUserProfileUsercase(userId);
 
     state = result.fold(
-      (l) => AuthFailureState(message: _mapFailureToMessage(l)),
+      (l) => UserProfileFetchFailureState(message: _mapFailureToMessage(l)),
       (r) {
-        userProfile = r;
-        return UserProfileFatchedState();
+        userProfile = r.userProfile;
+        totalUser = r.vefiedUserCount;
+        return UserProfileFetchedState();
       },
     );
+    Future.delayed(const Duration(seconds: 3), () => resetState());
+  }
+
+  int getTotalVoter() {
+    return totalUser;
   }
 
   Map<String, dynamic>? getUserDetail() {
@@ -149,21 +151,29 @@ class AuthNotifier extends StateNotifier<AuthProviderState> {
   Future<void> logout() async {
     state = LoggingOutState();
     final result = await logOutUsecase();
-    state = stateChecker(result, LoggedOutState());
+    state = result.fold(
+      (l) => LoginFailureState(message: _mapFailureToMessage(l)),
+      (r) {
+        return LoggedOutState();
+      },
+    );
+    Future.delayed(const Duration(seconds: 3), () => resetState());
+  }
+
+  void resetState() {
+    state = InitialState();
   }
 }
 
 final authStateProvider =
     StateNotifierProvider<AuthNotifier, AuthProviderState>((ref) {
   return AuthNotifier(
-      logInUsecase: ref.watch(logInUsecaseProvider),
-      logOutUsecase: ref.watch(logOutUsercaseProvider),
-      fatchUserProfileUsercase: ref.watch(fatchUserProfileProvider),
-      signUpUsecase: ref.watch(signUpProvider),
-      userDetailUsecase: ref.watch(userDetailProvider),
-      updateUsecase: ref.watch(userUpdateProvider),
-      );
-      
+    logInUsecase: ref.watch(logInUsecaseProvider),
+    logOutUsecase: ref.watch(logOutUsercaseProvider),
+    fatchUserProfileUsercase: ref.watch(fatchUserProfileProvider),
+    signUpUsecase: ref.watch(signUpProvider),
+    userDetailUsecase: ref.watch(userDetailProvider),
+  );
 });
 
 String _mapFailureToMessage(Failure failure) {

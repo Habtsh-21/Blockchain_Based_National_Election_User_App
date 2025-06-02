@@ -133,7 +133,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             GradientButton(
-                              text: authState is LogingInState
+                              text: authState is LoggingInState
                                   ? const Center(
                                       child: CircularProgressIndicator(),
                                     )
@@ -159,8 +159,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                             SizedBox(height: height * 0.02),
                             if (authState is LoggedInState)
-                              const Text('Verified successfully'),
-                            if (authState is AuthFailureState)
+                              const Text('LoggedIn successfully'),
+                            if (authState is LoginFailureState)
                               Text(authState.message)
                           ],
                         ),

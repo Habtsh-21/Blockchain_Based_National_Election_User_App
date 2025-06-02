@@ -3,7 +3,6 @@ import 'package:blockchain_based_national_election_user_app/features/auth/data/a
 
 abstract class AuthRepository {
   UserUnit userDetail(ProfileModel signUpModel);
-  UserUnit updateUserDetail(String userId, Map<String, dynamic> userDetail);
   UserUnit logIn(String email, String passowrd);
   UserUnit signUp(String email, String password);
   UserData fatchUserProfile(String userId);
