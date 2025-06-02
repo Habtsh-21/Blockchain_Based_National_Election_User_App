@@ -47,6 +47,8 @@ class AuthRepoImpl extends AuthRepository {
         return const Right(unit);
       } on ServerException {
         return Left(ServerFailure());
+      } on EmailNotVerifiedException {
+        return Left(EmailNotVerifiedFailure());
       } on UserNotFoundException {
         return Left(UserNotFoundFailure());
       } on WrongPasswordException {
@@ -65,7 +67,7 @@ class AuthRepoImpl extends AuthRepository {
         if (e is TransactionFailedException) {
           return Left(TransactionFailedFailure(message: e.message));
         } else {
-         return Left(ServerFailure());
+          return Left(ServerFailure());
         }
       }
     } else {

@@ -27,6 +27,7 @@ class StateAlreadyExistException implements Exception {}
 
 class RepAlreadyExistException implements Exception {}
 
+class EmailNotVerifiedException implements Exception{}
 class TransactionFailedException implements Exception {
   final String message;
   TransactionFailedException({required this.message});

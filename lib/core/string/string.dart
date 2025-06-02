@@ -18,3 +18,4 @@ const String STORAGE_MESSAGE = 'File already exists in storage.';
 const String CLIENT_FAILED = 'Transaction failed. Please try again.';
 const String NULL_VALUE = 'null value';
 const String UNKOWN_PROBLEM = 'unkown problem,please try again';
+const String EMAIL_NOT_VERIFIED = 'Email not verified. Please check your inbox.';

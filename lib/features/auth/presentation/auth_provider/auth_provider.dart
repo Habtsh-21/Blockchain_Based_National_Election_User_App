@@ -208,6 +208,10 @@ String _mapFailureToMessage(Failure failure) {
       return OPERATION_IS_NOT_ALLOWED;
     case const (ServerFailure):
       return SERVER_FAILURE_MESSAGE;
+    case const (TransactionFailedFailure):
+      return (failure as TransactionFailedFailure).message;
+    case const (EmailNotVerifiedFailure):
+      return EMAIL_NOT_VERIFIED;
     case const (OfflineFailure):
       return OFFLINE_FAILURE_MESSAGE;
     case const (UserNotFoundFailure):

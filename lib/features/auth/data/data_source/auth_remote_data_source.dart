@@ -14,57 +14,58 @@ abstract class AuthRemoteDataSource {
 class AuthRemoteDataSourceImpl extends AuthRemoteDataSource {
   final supabase = Supabase.instance.client;
 
- @override
-Future<void> login(String email, String password) async {
-  print('Trying login with: $email/$password');
+  @override
+  Future<void> login(String email, String password) async {
+    print('Trying login with: $email/$password');
 
-  try {
-    final response = await supabase.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
-
-    final user = response.user;
-
-    if (user == null) {
-      throw TransactionFailedException(message: 'Login failed, try again');
-    }
-
-    // ✅ Check email verification explicitly
-    if (user.emailConfirmedAt == null) {
-      throw TransactionFailedException(
-        message: 'Email not verified. Please check your inbox.',
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
-    }
 
-  } on AuthException catch (e) {
-    final message = e.message.toLowerCase();
-    if (message.contains('invalid login credentials') ||
-        message.contains('user not found')) {
-      throw TransactionFailedException(
-        message: 'Incorrect email or password',
-      );
-    } else if (message.contains('invalid email')) {
-      throw TransactionFailedException(message: 'Invalid email format');
-    } else if (message.contains('signups not allowed')) {
-      throw TransactionFailedException(message: 'Signups are not allowed');
-    } else if (message.contains('too many requests')) {
-      throw TransactionFailedException(
-        message: 'Too many attempts. Try again later.',
-      );
-    } else {
-      // Catch-all for unexpected AuthExceptions
-      throw TransactionFailedException(message: 'Login error: ${e.message}');
+      final user = response.user;
+
+      if (user == null) {
+        print('no user');
+
+        throw NoUserException();
+      }
+
+      if (user.emailConfirmedAt == null) {
+        print('email not verified');
+        throw EmailNotVerifiedException();
+      }
+    } on AuthException catch (e) {
+      final message = e.message.toLowerCase();
+
+      if (message.contains('invalid login credentials')) {
+        if (message.contains('email')) {
+          throw UserNotFoundException();
+        } else {
+          throw WrongPasswordException();
+        }
+      } else if (message.contains('user not found')) {
+        throw UserNotFoundException();
+      } else if (message.contains('invalid email')) {
+        throw InvalidEmailException();
+      } else if (message.contains('signups not allowed')) {
+        throw OperationNotAllowedException();
+      } else if (message.contains('too many requests')) {
+        throw TooManyRequestsException();
+      } else if (message.contains('email already in use')) {
+        throw EmailAlreadyInUseException();
+      } else if (message.contains('user disabled')) {
+        throw UserDisableException();
+      } else {
+        print(e.message);
+        throw TransactionFailedException(message: e.message);
+      }
+    } catch (e) {
+      print('Unexpected error: $e');
+      throw UnknownException();
     }
-  } on TransactionFailedException {
-    rethrow; // Allow custom exceptions to bubble up
-  } catch (e) {
-    print('Unexpected error: $e');
-    throw TransactionFailedException(
-      message: 'Unexpected error: ${e.toString()}',
-    );
   }
-}
 
   @override
   Future<void> signUp(String email, String password) async {
