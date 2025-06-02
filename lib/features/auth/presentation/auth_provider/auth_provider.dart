@@ -12,6 +12,7 @@ import 'package:blockchain_based_national_election_user_app/features/auth/domain
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/auth_provider/provider_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import 'package:web3dart/crypto.dart';
 
 final connectionProvider = Provider<InternetConnection>(
   (ref) => InternetConnection(),
@@ -66,6 +67,11 @@ final logOutUsercaseProvider = Provider<LogoutUsecase>(
     return LogoutUsecase(authRepository: authRepository);
   },
 );
+
+String hashFaydaNo(String faydaNo) {
+  final hashBytes = keccakUtf8(faydaNo); // Ethereum-style keccak256 hash
+  return '0x${bytesToHex(hashBytes)}';
+}
 
 class AuthNotifier extends StateNotifier<AuthProviderState> {
   final LoginUsecase logInUsecase;
@@ -132,6 +138,10 @@ class AuthNotifier extends StateNotifier<AuthProviderState> {
     state = result.fold(
       (l) => UserProfileFetchFailureState(message: _mapFailureToMessage(l)),
       (r) {
+        if (r.userProfile != null) {
+          int faydaNo = r.userProfile!['fayda_no'];
+          r.userProfile!['fayda_no'] = hashFaydaNo(faydaNo.toString());
+        }
         userProfile = r.userProfile;
         totalUser = r.vefiedUserCount;
         return UserProfileFetchedState();
@@ -145,7 +155,17 @@ class AuthNotifier extends StateNotifier<AuthProviderState> {
   }
 
   Map<String, dynamic>? getUserDetail() {
+    if (userProfile == null) {
+      return null;
+    }
     return userProfile;
+  }
+
+  String hashedFaydaNo() {
+    if (userProfile == null) {
+      return '0x0000000000000000000';
+    }
+    return userProfile!['fayda_no'];
   }
 
   Future<void> logout() async {

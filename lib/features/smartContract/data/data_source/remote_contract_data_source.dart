@@ -17,16 +17,16 @@ const String _rpcUrl =
 const String _wsUrl =
     'ws://eth-sepolia.g.alchemy.com/v2/-ojPUotrULaRUfZmH3MRZTFQ7OH1wB22';
 const String contractAddress =
-    "0xf41e2dD55e52074E08d86541b564B01f2D008641"; 
+    "0x4F51C80508207Dc57b1Df9b51A96f4C7a8756B8c"; 
 const String PRIVATE_KEY =
     "4398d3ac1be44cbc929ee7bf64d203d9f4f2e3f6763911ee8d58fdbddca02883";
 
 abstract class RemoteContractDataSource {
-  Future<String> vote(int faydaNo, int votedPartyId, int stateId);
+  Future<String> vote(String faydaNo, int votedPartyId, int stateId);
   Future<List<PartyModel>> getParties();
   Future<List<StateModel>> getState();
   Future<String> uploadImage(File pickedFile, String fileName);
-  Future<AllDataModel> getAllData(int faydaNo);
+  Future<AllDataModel> getAllData(String faydaNo);
 }
 
 class RemoteContractDataSourceImpl extends RemoteContractDataSource {
@@ -69,7 +69,7 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
   }
 
   @override
-  Future<String> vote(int faydaNo, int votedPartyId, int stateId) async {
+  Future<String> vote(String faydaNo, int votedPartyId, int stateId) async {
     try {
       print(faydaNo);
       print(votedPartyId);
@@ -83,7 +83,7 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
             contract: _contract,
             function: _vote,
             parameters: [
-              BigInt.from(faydaNo),
+              faydaNo,
               BigInt.from(stateId),
               BigInt.from(votedPartyId),
             ],
@@ -168,7 +168,7 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
   }
 
   @override
-  Future<AllDataModel> getAllData(int faydaNo) async {
+  Future<AllDataModel> getAllData(String faydaNo) async {
     try {
       await init();
       print(faydaNo);
@@ -176,7 +176,7 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
       final result = await _client.call(
         contract: _contract,
         function: _getAllData,
-        params: [BigInt.from(faydaNo)],
+        params: [faydaNo],
       );
       print(result);
       // Decode each item from result

@@ -6,7 +6,7 @@ class VoteUsecase {
 
   VoteUsecase({required this.contractRepository});
 
-  ContractData call(int faydaNo, int votedPartyId, int stateId) {
+  ContractData call(String faydaNo, int votedPartyId, int stateId) {
     return contractRepository.vote(faydaNo, votedPartyId, stateId);
   }
 }

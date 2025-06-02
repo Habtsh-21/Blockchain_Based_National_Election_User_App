@@ -30,11 +30,7 @@ class _MainPageState extends ConsumerState<MainPage> {
 
   Future<void> _initialize() async {
     await ref.read(authStateProvider.notifier).fatchUserProfile(user!.id);
-    final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
-    final faydaNo = userDetail != null && userDetail.containsKey('fayda_no')
-        ? userDetail['fayda_no']
-        : 0000;
-
+    final faydaNo = ref.read(authStateProvider.notifier).hashedFaydaNo();
     await ref.read(contractProvider.notifier).fatchAllData(faydaNo);
   }
 

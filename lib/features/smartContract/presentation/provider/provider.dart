@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:blockchain_based_national_election_user_app/core/failure/failure.dart';
 import 'package:blockchain_based_national_election_user_app/core/network/network.dart';
@@ -12,10 +11,8 @@ import 'package:blockchain_based_national_election_user_app/features/smartContra
 import 'package:blockchain_based_national_election_user_app/features/smartContract/domain/usecase/get_all_data_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/domain/usecase/get_party_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/domain/usecase/get_state_usecase.dart';
-import 'package:blockchain_based_national_election_user_app/features/smartContract/domain/usecase/uploadImage_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/domain/usecase/vote_usecase.dart';
 import 'package:blockchain_based_national_election_user_app/features/smartContract/presentation/provider/provider_state.dart';
-import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
@@ -91,7 +88,7 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
   // int counter = 0;
 
   Future<List<PartyModel>?> vote(
-      int faydaNo, int votedPartyId, int stateId) async {
+      String faydaNo, int votedPartyId, int stateId) async {
     state = VotingState();
     final result = await voteUsecase(faydaNo, votedPartyId, stateId);
     state = result.fold((l) {
@@ -131,7 +128,7 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
     return stateList;
   }
 
-  Future<AllDataModel?> fatchAllData(int faydaNo) async {
+  Future<AllDataModel?> fatchAllData(String faydaNo) async {
     AllDataModel? allDataModel;
     state = ContractAllDataFetchingState();
     final result = await getAllDataUsecase(faydaNo);

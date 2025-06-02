@@ -26,6 +26,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final width = MediaQuery.of(context).size.width;
     final email = user?.email;
     final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
+    final hashedFaydaNo = ref.read(authStateProvider.notifier).hashedFaydaNo();
     bool hasUserVoted = ref.read(contractProvider.notifier).hasUserVoted();
 
     int totalUser = ref.read(authStateProvider.notifier).getTotalVoter();
@@ -42,8 +43,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ref
                       .read(authStateProvider.notifier)
                       .fatchUserProfile(user!.id);
-                  ref.read(contractProvider.notifier).fatchAllData(
-                      userDetail != null ? userDetail['fayda_no'] : 0000);
+                  ref
+                      .read(contractProvider.notifier)
+                      .fatchAllData(hashedFaydaNo);
                 });
               },
               icon: const Icon(Icons.refresh))
@@ -113,9 +115,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                       child: Text(
-                        hasUserVoted
-                            ? 'You have voted'
-                            : 'You have not voted',
+                        hasUserVoted ? 'You have voted' : 'You have not voted',
                         style: TextStyle(
                           color: hasUserVoted
                               ? Colors.green.shade800

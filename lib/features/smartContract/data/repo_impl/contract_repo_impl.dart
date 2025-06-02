@@ -16,7 +16,7 @@ class ContractRepoImpl extends ContractRepository {
   ContractRepoImpl(
       {required this.networkInfo, required this.remoteContractDataSource});
   @override
-  ContractData vote(int faydaNo, int votedPartyId, int stateId) async {
+  ContractData vote(String faydaNo, int votedPartyId, int stateId) async {
     if (await networkInfo.isConnected) {
       try {
         final txHash =
@@ -71,7 +71,7 @@ class ContractRepoImpl extends ContractRepository {
   }
 
   @override
-  ContractAllDta getAllData(int faydaNo, {int attempt = 1, int atm = 1}) async {
+  ContractAllDta getAllData(String faydaNo, {int attempt = 1, int atm = 1}) async {
     const maxAttempts = 10;
 
     if (await networkInfo.isConnected) {

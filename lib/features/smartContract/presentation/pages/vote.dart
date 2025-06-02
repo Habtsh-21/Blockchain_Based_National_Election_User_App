@@ -68,9 +68,7 @@ class _ControlState extends ConsumerState<Vote> {
     endTime = ref.watch(contractProvider.notifier).endTime();
     final hasNotStarted = startTime != null && now.isBefore(startTime!);
     final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
-    int faydaNo = userDetail != null
-        ? userDetail['fayda_no']
-        : 0000; //if user detail is null send a random value it return false vote value (user hasn't vote)
+    final hashedFayda = ref.read(authStateProvider.notifier).hashedFaydaNo();
     bool isVotingPaused = ref.read(contractProvider.notifier).isVotingPaused();
     bool hasUserVoted = ref.read(contractProvider.notifier).hasUserVoted();
     final contractState = ref.watch(contractProvider);
@@ -80,7 +78,7 @@ class _ControlState extends ConsumerState<Vote> {
 
     if (partyList == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(contractProvider.notifier).fatchAllData(faydaNo);
+        ref.read(contractProvider.notifier).fatchAllData(hashedFayda);
       });
       return const Scaffold(
         body: Center(
@@ -125,7 +123,7 @@ class _ControlState extends ConsumerState<Vote> {
         actions: [
           IconButton(
             onPressed: () =>
-                ref.read(contractProvider.notifier).fatchAllData(faydaNo),
+                ref.read(contractProvider.notifier).fatchAllData(hashedFayda),
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh data',
           )
@@ -217,13 +215,19 @@ class _ControlState extends ConsumerState<Vote> {
                                   width: double.infinity,
                                   height: height * 0.055,
                                   child: GradientButton(
-                                    text: Text(
-                                      'Vote',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                    text: contractState is VotingState
+                                        ? Center(
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Vote',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                     onPress: shouldDisable
                                         ? () {}
                                         : () {
@@ -294,7 +298,7 @@ class _ControlState extends ConsumerState<Vote> {
                             isVoting
                                 ? "Voting in Progress"
                                 : startTime == null || endTime == null
-                                    ? "Please set start and end times"
+                                    ? "Time have not set yet"
                                     : hasNotStarted
                                         ? "Voting will start soon"
                                         : "Voting has ended",

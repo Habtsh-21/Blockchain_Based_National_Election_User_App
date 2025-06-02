@@ -15,7 +15,7 @@ class Record extends ConsumerStatefulWidget {
 class _RegistryState extends ConsumerState<Record> {
   @override
   Widget build(BuildContext context) {
-    final userDetail = ref.read(authStateProvider.notifier).getUserDetail();
+    final hashedFaydaNo = ref.read(authStateProvider.notifier).hashedFaydaNo();
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -26,8 +26,7 @@ class _RegistryState extends ConsumerState<Record> {
             IconButton(
                 onPressed: () {
                   setState(() {
-                    ref.read(contractProvider.notifier).fatchAllData(
-                        userDetail != null ? userDetail['fayda_no'] : 0000);
+                    ref.read(contractProvider.notifier).fatchAllData(hashedFaydaNo);
                   });
                 },
                 icon: const Icon(Icons.refresh))
