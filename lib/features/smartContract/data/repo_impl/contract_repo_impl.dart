@@ -71,7 +71,8 @@ class ContractRepoImpl extends ContractRepository {
   }
 
   @override
-  ContractAllDta getAllData(String faydaNo, {int attempt = 1, int atm = 1}) async {
+  ContractAllData getAllData(String faydaNo,
+      {int attempt = 1, int atm = 1}) async {
     const maxAttempts = 10;
 
     if (await networkInfo.isConnected) {

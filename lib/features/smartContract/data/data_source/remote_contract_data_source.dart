@@ -16,8 +16,7 @@ const String _rpcUrl =
     'https://eth-sepolia.g.alchemy.com/v2/-ojPUotrULaRUfZmH3MRZTFQ7OH1wB22';
 const String _wsUrl =
     'ws://eth-sepolia.g.alchemy.com/v2/-ojPUotrULaRUfZmH3MRZTFQ7OH1wB22';
-const String contractAddress =
-    "0x4F51C80508207Dc57b1Df9b51A96f4C7a8756B8c"; 
+const String contractAddress = "0x5bF77EcF1559b7b0A3b0E5B8Fbb900D336526010";
 const String PRIVATE_KEY =
     "4398d3ac1be44cbc929ee7bf64d203d9f4f2e3f6763911ee8d58fdbddca02883";
 
@@ -171,23 +170,30 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
   Future<AllDataModel> getAllData(String faydaNo) async {
     try {
       await init();
-      print(faydaNo);
+
       _getAllData = _contract.function('getAllData');
       final result = await _client.call(
         contract: _contract,
         function: _getAllData,
         params: [faydaNo],
       );
+      int totalVotes = 0;
       print(result);
       // Decode each item from result
       final rawStates = result[0] as List;
       final rawParties = result[1] as List;
-      final totalVotes = int.parse(result[2].toString());
-      final votingPaused = result[3] as bool;
-      final votingActive = result[4] as bool;
-      final hasUserVoted = result[5] as bool;
-      final startTime = int.parse(result[6].toString());
-      final endTime = int.parse(result[7].toString());
+      final votingPaused = result[2] as bool;
+      final votingActive = result[3] as bool;
+      final hasUserVoted = result[4] as bool;
+      final start = int.parse(result[5].toString());
+      final end = int.parse(result[6].toString());
+      DateTime? startTime;
+      DateTime? endTime;
+
+      if (start != 0 && end != 0) {
+        startTime = DateTime.fromMillisecondsSinceEpoch(start * 1000);
+        endTime = DateTime.fromMillisecondsSinceEpoch(end * 1000);
+      }
 
       final stateList = rawStates.map((state) {
         return StateModel(
@@ -197,8 +203,9 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
       }).toList();
 
       final partyList = rawParties.map((party) {
+        int totalPartyVote = 0;
         Map<int, int> stateVotes = {};
-        List<List<int>> stateVoteList = (party[4] as List)
+        List<List<int>> stateVoteList = (party[3] as List)
             .map((e) => [
                   int.parse(e[0].toString()),
                   int.parse(e[1].toString()),
@@ -207,13 +214,15 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
 
         for (List<int> state in stateVoteList) {
           stateVotes[state[0]] = state[1];
+          totalPartyVote += state[1];
+          totalVotes += state[1];
         }
 
         return PartyModel(
           partyName: party[0] as String,
           partySymbol: party[1] as String,
           partyId: int.parse(party[2].toString()),
-          votes: int.parse(party[3].toString()),
+          votes: totalPartyVote,
           stateVotes: stateVotes,
         );
       }).toList();
@@ -229,7 +238,7 @@ class RemoteContractDataSourceImpl extends RemoteContractDataSource {
         votingEndTime: endTime,
       );
     } catch (e) {
-      print('getAllData error: ${e.toString()}');
+      print(e.toString());
       throw TransactionFailedException(message: e.toString());
     }
   }

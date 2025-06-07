@@ -8,8 +8,8 @@ class AllDataModel {
   bool votingPaused;
   bool isVotringActive;
   bool hasUserVoted;
-  int votingStateTime;
-  int votingEndTime;
+  DateTime? votingStateTime;
+  DateTime? votingEndTime;
 
   AllDataModel(
       {required this.parties,

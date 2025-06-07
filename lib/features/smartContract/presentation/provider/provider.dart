@@ -1,4 +1,3 @@
-
 import 'package:blockchain_based_national_election_user_app/core/failure/failure.dart';
 import 'package:blockchain_based_national_election_user_app/core/network/network.dart';
 import 'package:blockchain_based_national_election_user_app/core/string/string.dart';
@@ -82,8 +81,8 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
   bool _hasUserVoted = false;
   int _totalNoOfParties = 0;
   int _totalNoOfStates = 0;
-  int _startTime = 0;
-  int _endTime = 0;
+  DateTime? _startTime;
+  DateTime? _endTime;
 
   // int counter = 0;
 
@@ -184,15 +183,11 @@ class ContractNotifier extends StateNotifier<ContractProviderState> {
   }
 
   DateTime? startTime() {
-    if (_startTime == 0) return null;
-    DateTime start = DateTime.fromMillisecondsSinceEpoch(_startTime * 1000);
-    return start;
+    return _startTime;
   }
 
   DateTime? endTime() {
-    if (_endTime == 0) return null;
-    DateTime end = DateTime.fromMillisecondsSinceEpoch(_endTime * 1000);
-    return end;
+    return _endTime;
   }
 
   void resetState() {
@@ -220,13 +215,6 @@ final contractProvider =
     );
   },
 );
-
-// ContractProviderState stateChecker(
-//     Either either, ContractProviderState pState) {
-//   return either.fold(
-//       (failure) => ContractFailureState(message: _mapFailureToMessage(failure)),
-//       (r) => pState);
-// }
 
 String _mapFailureToMessage(Failure failure) {
   switch (failure.runtimeType) {
