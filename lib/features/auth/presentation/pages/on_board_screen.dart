@@ -1,10 +1,8 @@
-
-
 import 'package:blockchain_based_national_election_user_app/core/widgets/gradient_button.dart';
 import 'package:blockchain_based_national_election_user_app/features/auth/presentation/pages/intro.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -16,6 +14,13 @@ class OnBoardingScreen extends StatefulWidget {
 class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController pageController = PageController();
   int currentPage = 0;
+
+  void onBoardScreen(bool isVisitedBefore) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isVisitedBefore', isVisitedBefore);
+
+    print( prefs.getBool('isVisitedBefore'));
+  }
 
   final List<Widget> onboardingPages = [
     const OnboardingPage(
@@ -111,10 +116,9 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         child: const Text('BACK'),
                       ),
                     GradientButton(
-                      text:
-                          Text(currentPage == onboardingPages.length - 1
-                              ? 'GET STARTED'
-                              : 'NEXT'),
+                      text: Text(currentPage == onboardingPages.length - 1
+                          ? 'GET STARTED'
+                          : 'NEXT'),
                       onPress: () {
                         if (currentPage < onboardingPages.length - 1) {
                           pageController.nextPage(
@@ -122,10 +126,12 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                             curve: Curves.easeIn,
                           );
                         } else {
+                          onBoardScreen(true);
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const Intro()),
+                            MaterialPageRoute(builder: (context) => Intro()),
                           );
+
                         }
                       },
                     ),
